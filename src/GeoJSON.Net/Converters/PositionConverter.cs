@@ -30,27 +30,46 @@ namespace GeoJSON.Net.Converters
         /// </summary>
         /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {            
-            var coordinateElements = value as System.Collections.Generic.List<GeoJSON.Net.Geometry.IPosition>;
-            if (coordinateElements != null)
-            {
-                if (coordinateElements.Count > 0 && coordinateElements[0] is GeographicPosition) 
-                {
-                    var coordinates = coordinateElements[0] as GeographicPosition;
+        {
+			  var coordinateElements = value as List<IPosition>;
+			  if (coordinateElements != null)
+			  {
+				  if (coordinateElements.Count == 1) // Point
+				  {
+					  var coordinate = coordinateElements[0] as GeographicPosition;
+					  if (coordinate == null)
+					  {
+						  serializer.Serialize(writer, null);
+						  return;
+					  }
+					  var coordinateArray = new JArray(coordinate.Longitude, coordinate.Latitude);
+					  if (coordinate.Altitude.HasValue && coordinate.Altitude != 0)
+						  coordinateArray = new JArray(coordinate.Longitude, coordinate.Latitude, coordinate.Altitude);
 
-                    var coordinateArray = new JArray(coordinates.Longitude, coordinates.Latitude);
-                    if (coordinates.Altitude.HasValue && coordinates.Altitude != 0)
-                        coordinateArray = new JArray(coordinates.Longitude, coordinates.Latitude, coordinates.Altitude);
+					  serializer.Serialize(writer, coordinateArray);
+				  }
+				  else 
+				  {
+					  var coordinateArray = new JArray();
+					  foreach (var coordinate in coordinateElements)
+					  {
+						  var position = coordinate as GeographicPosition;
+						  if (position == null)
+							  continue;
 
-                    serializer.Serialize(writer, coordinateArray);
+						  JArray positionArray;
+						  if (position.Altitude.HasValue && position.Altitude != 0)
+							  positionArray = new JArray(position.Longitude, position.Latitude, position.Altitude);
+						  else
+							  positionArray = new JArray(position.Longitude, position.Latitude);
 
-                }
-                else
-                    serializer.Serialize(writer, null);
-            }
-            else
-                serializer.Serialize(writer, value);
-            
+						  coordinateArray.Add(positionArray);
+					  }
+					  serializer.Serialize(writer, coordinateArray);
+				  }
+			  }
+			  else
+				  serializer.Serialize(writer, value);
         }
 
         /// <summary>

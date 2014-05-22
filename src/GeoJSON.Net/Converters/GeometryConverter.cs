@@ -7,6 +7,8 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System.Runtime.Serialization;
+
 namespace GeoJSON.Net.Converters
 {
     using System;
@@ -30,8 +32,11 @@ namespace GeoJSON.Net.Converters
         /// <param name="writer">The <see cref="T:Newtonsoft.Json.JsonWriter"/> to write to.</param><param name="value">The value.</param><param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            // ToDo: implement
-            throw new NotImplementedException();
+			  var geometryObject = value as IGeometryObject;
+			  if (geometryObject != null)
+				  serializer.Serialize(writer, geometryObject);
+			  else
+				  throw new SerializationException("Not supported Geometry type.");
         }
 
         /// <summary>
